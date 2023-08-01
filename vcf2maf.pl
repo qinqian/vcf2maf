@@ -64,6 +64,7 @@ sub GetEffectPriority {
         '5_prime_UTR_variant' => 25, # A UTR variant of the 5' UTR
         '3_prime_UTR_variant' => 26, # A UTR variant of the 3' UTR
         'non_coding_transcript_exon_variant' => 27, # snpEff-specific synonym for non_coding_exon_variant
+        'nc_transcript_variant' => 27, 
         'intron_variant' => 28, # A transcript variant occurring within an intron
         'NMD_transcript_variant' => 29, # A variant in a transcript that is the target of NMD
         'non_coding_transcript_variant' => 30, # A transcript variant of a non coding RNA gene
@@ -80,7 +81,7 @@ sub GetEffectPriority {
         'intergenic_variant' => 40, # A sequence variant located in the intergenic region, between genes
 	'sequence_variant' => 41, #A sequence_variant is a non exact copy of a sequence_feature or genome exhibiting one or more sequence_alteration
 
-	#TODO: my manual curation for other annotator columns such as snpEff
+	#NOTE my manual curation for other annotator columns such as snpEff
         '5_prime_UTR_premature_start_codon_gain_variant' => 25, # snpEff-specific effect, creating a start codon in 5' UTR
         'conservative_inframe_insertion' => 11, # An inframe increase in cds length that inserts one or more codons into the coding sequence between existing codons
         'conservative_inframe_deletion' => 12, # An inframe decrease in cds length that deletes one or more entire codons from the coding sequence but does not change any remaining codons
@@ -89,11 +90,12 @@ sub GetEffectPriority {
 	'initiator_codon_variant' => 23, # A codon variant that changes at least one base of the first codon of a transcript
         'conservative_missense_variant' => 13, # A sequence variant whereby at least one base of a codon is changed resulting in a codon that encodes for a different but similar amino acid. These variants may or may not be deleterious
         'rare_amino_acid_variant' => 13, # A sequence variant whereby at least one base of a codon encoding a rare amino acid is changed, resulting in a different encoded amino acid
-        #'exon_variant' => 11, # A sequence variant that changes exon sequence
-        #'intragenic_variant' => 14, # A variant that occurs within a gene but falls outside of all transcript features. This occurs when alternate transcripts of a gene do not share overlapping sequence
-        #'INTRAGENIC' => 14, # snpEff-specific synonym of intragenic_variant
-        #'regulatory_region' =>17, # snpEff-specific effect that should really be regulatory_region_variant
-        #'intergenic_region' => 19, # snpEff-specific effect that should really be intergenic_variant
+	
+        'exon_variant' => 31, # A sequence variant that changes exon sequence
+        'intragenic_variant' => 30, # A variant that occurs within a gene but falls outside of all transcript features. This occurs when alternate transcripts of a gene do not share overlapping sequence
+        'INTRAGENIC' => 30, # snpEff-specific synonym of intragenic_variant
+        'regulatory_region' => 39, # snpEff-specific effect that should really be regulatory_region_variant
+        'intergenic_region' => 40, # snpEff-specific effect that should really be intergenic_variant
         '' => 50
     );
     unless( defined $effectPriority{$effect} ) {
@@ -997,14 +999,13 @@ sub GetVariantClassification {
     return "Frame_Shift_Ins" if(( $effect eq 'frameshift_variant' or ( $effect eq 'protein_altering_variant' and !$inframe )) and $var_type eq 'INS' );
     return "Nonstop_Mutation" if( $effect eq 'stop_lost' );
     return "Translation_Start_Site" if( $effect =~ /^(initiator_codon_variant|start_lost)$/ );
-    return "In_Frame_Ins" if( $effect =~ /inframe_insertion$/ or ( $effect eq 'protein_altering_variant' and $inframe and $var_type eq 'INS' ));
-    return "In_Frame_Del" if( $effect =~ /inframe_deletion$/ or ( $effect eq 'protein_altering_variant' and $inframe and $var_type eq 'DEL' ));
+    return "In_Frame_Ins" if( $effect =~ /(inframe_insertion|conservative_inframe_insertion|disruptive_inframe_insertion)$/ or ( $effect eq 'protein_altering_variant' and $inframe and $var_type eq 'INS' ));
+    return "In_Frame_Del" if( $effect =~ /(inframe_deletion|disruptive_inframe_deletion|conservative_inframe_deletion)$/ or ( $effect eq 'protein_altering_variant' and $inframe and $var_type eq 'DEL' ));
     return "Missense_Mutation" if( $effect =~ /^(missense_variant|coding_sequence_variant|conservative_missense_variant|rare_amino_acid_variant)$/ );
     return "Intron" if ( $effect =~ /^(transcript_amplification|intron_variant|INTRAGENIC|intragenic_variant)$/ );
-    #return "Splice_Region" if( $effect eq 'splice_region_variant' );
-    return "Splice_Region" if( $effect =~ /^(splice_region_variant|splice_polypyrimidine_tract_variant)$/ );
-    return "Silent" if( $effect =~ /^(incomplete_terminal_codon_variant|synonymous_variant|stop_retained_variant|NMD_transcript_variant)$/ );
-    return "RNA" if( $effect =~ /^(mature_miRNA_variant|exon_variant|non_coding_exon_variant|non_coding_transcript_exon_variant|non_coding_transcript_variant|nc_transcript_variant)$/ );
+    return "Splice_Region" if( $effect =~ /^(splice_region_variant|splice_polypyrimidine_tract_variant|splice_donor_5th_base_variant|splice_donor_region_variant)$/ );
+    return "Silent" if( $effect =~ /^(incomplete_terminal_codon_variant|synonymous_variant|stop_retained_variant|NMD_transcript_variant|start_retained_variant)$/ );
+    return "RNA" if( $effect =~ /^(mature_miRNA_variant|exon_variant|non_coding_exon_variant|non_coding_transcript_exon_variant|non_coding_transcript_variant|nc_transcript_variant|coding_transcript_variant)$/ );
     return "5'UTR" if( $effect =~ /^(5_prime_UTR_variant|5_prime_UTR_premature_start_codon_gain_variant)$/ );
     return "3'UTR" if( $effect eq '3_prime_UTR_variant' );
     return "IGR" if( $effect =~ /^(TF_binding_site_variant|regulatory_region_variant|regulatory_region|intergenic_variant|intergenic_region)$/ );
